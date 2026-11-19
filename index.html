@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f8f7f3">
+  <title>BG Remover — Made by Bonnie.C</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #292822;
+      --muted: #77756e;
+      --paper: #f8f7f3;
+      --white: #fff;
+      --line: #e4e1d9;
+      --blue: #5597d9;
+      --blue-dark: #406fbc;
+      --green: #35866c;
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    button, input { font: inherit; }
+    button { color: inherit; }
+
+    .topbar {
+      height: 66px;
+      padding: 0 clamp(22px, 5vw, 76px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -.35px;
+    }
+
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: #e8ad96;
+      border-radius: 8px;
+    }
+
+    .brand-mark svg { width: 17px; height: 17px; }
+
+    main {
+      width: min(1050px, calc(100% - 44px));
+      margin: 0 auto;
+      padding: clamp(36px, 6vh, 58px) 0 48px;
+    }
+
+    .intro { max-width: 700px; margin-bottom: 27px; }
+
+    .eyebrow {
+      display: none;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(32px, 4vw, 43px);
+      font-weight: 690;
+      letter-spacing: -1.8px;
+      line-height: 1.12;
+    }
+
+    h1 span { color: inherit; }
+
+    .intro p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(270px, 340px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .panel {
+      overflow: hidden;
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: none;
+    }
+
+    .controls { padding: 23px; }
+
+    .section-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 17px;
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 690;
+      letter-spacing: -.2px;
+    }
+
+    .step {
+      color: #aaa79f;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .dropzone {
+      min-height: 180px;
+      padding: 22px 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px dashed #ded9d0;
+      border-radius: 8px;
+      background: #fbfaf7;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s, transform .2s;
+    }
+
+    .dropzone:hover, .dropzone.drag-over {
+      border-color: var(--blue);
+      background: #fffaf7;
+    }
+
+    .dropzone.drag-over { transform: scale(1.015); }
+
+    .upload-icon {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 12px;
+      color: var(--blue);
+      background: #f8eee8;
+      border-radius: 10px;
+    }
+
+    .upload-icon svg { width: 20px; height: 20px; }
+
+    .drop-title { margin: 0; font-size: 13px; font-weight: 660; }
+    .drop-subtitle { margin: 6px 0 0; color: var(--muted); font-size: 11px; }
+    .browse { color: var(--blue-dark); font-weight: 650; }
+    .format-note { margin: 12px 0 0; color: #aaa79f; font-size: 10px; }
+    #file-input { display: none; }
+
+    .file-row {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin-top: 13px;
+      padding: 10px;
+      background: #f7f6f2;
+      border-radius: 8px;
+    }
+
+    .file-row.visible { display: flex; }
+
+    .file-thumb {
+      width: 36px;
+      height: 36px;
+      object-fit: cover;
+      background-color: #eeece7;
+      border-radius: 7px;
+    }
+
+    .file-details { min-width: 0; flex: 1; }
+    .file-name {
+      overflow: hidden;
+      margin: 0;
+      font-size: 11px;
+      font-weight: 650;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-size { margin: 4px 0 0; color: var(--muted); font-size: 10px; }
+
+    .icon-button {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 0;
+      background: transparent;
+      border-radius: 8px;
+      color: #8d8982;
+      cursor: pointer;
+    }
+
+    .icon-button:hover { color: var(--blue-dark); background: #f8eee8; }
+    .icon-button svg { width: 15px; height: 15px; }
+
+    .divider { height: 1px; margin: 21px 0; background: #f0eee9; }
+
+    .image-type {
+      display: block;
+      width: 100%;
+      margin: 0 0 12px;
+      padding: 10px 11px;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      font-size: 12px;
+    }
+
+    .image-type:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+    .type-hint {
+      margin: -4px 0 12px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .tip {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 20px;
+      padding: 12px;
+      color: #74716a;
+      background: #f7f6f2;
+      border-radius: 8px;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .tip strong { color: #49463f; font-weight: 600; }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .status {
+      min-height: 16px;
+      margin: 12px 1px 0;
+      color: #77756e;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .status.error { color: #bd4435; }
+    .status.success { color: var(--green); }
+
+    .button {
+      width: 100%;
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      border: 0;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 620;
+      cursor: pointer;
+      transition: background .2s, transform .2s, opacity .2s;
+    }
+
+    .button:active:not(:disabled) { transform: scale(.985); }
+    .button:disabled { opacity: .46; cursor: not-allowed; }
+
+    .button-primary {
+      color: white;
+      background: var(--blue);
+      box-shadow: none;
+    }
+
+    .button-primary:hover:not(:disabled) { background: var(--blue-dark); }
+    .button-secondary { color: var(--ink); background: #f3f1ed; }
+    .button-secondary:hover:not(:disabled) { background: #ebe8e2; }
+
+    .button svg { width: 16px; height: 16px; }
+
+    .spinner {
+      width: 15px;
+      height: 15px;
+      border: 2px solid rgba(255,255,255,.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .preview-panel {
+      min-height: 445px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .preview-toolbar {
+      min-height: 54px;
+      padding: 0 19px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #f0eee9;
+    }
+
+    .preview-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 620;
+    }
+
+    .preview-title svg { width: 16px; height: 16px; color: #8d8982; }
+    .view-controls { display: flex; align-items: center; gap: 4px; }
+
+    .view-button {
+      padding: 7px 10px;
+      border: 0;
+      border-radius: 7px;
+      color: #8a877f;
+      background: transparent;
+      font-size: 10px;
+      font-weight: 620;
+      cursor: pointer;
+    }
+
+    .view-button.active { color: var(--ink); background: #f3f1ed; }
+    .view-button:disabled { opacity: .42; cursor: not-allowed; }
+
+    .stage {
+      position: relative;
+      min-height: 320px;
+      flex: 1;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background-color: #f7f6f2;
+      background-image: linear-gradient(45deg, #eae8e2 25%, transparent 25%),
+        linear-gradient(-45deg, #eae8e2 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #eae8e2 75%),
+        linear-gradient(-45deg, transparent 75%, #eae8e2 75%);
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+      background-size: 20px 20px;
+    }
+
+    .stage[data-background="white"] { background: #fff; }
+    .stage[data-background="cream"] { background: #f2e7d5; }
+    .stage[data-background="lavender"] { background: #e9e3f7; }
+    .stage[data-background="mint"] { background: #dceee5; }
+    .stage[data-background="dark"] { background: #292a2e; }
+
+    .stage-image {
+      display: none;
+      max-width: min(86%, 590px);
+      max-height: 310px;
+      object-fit: contain;
+      filter: drop-shadow(0 8px 12px rgba(36, 35, 31, .1));
+    }
+
+    .stage-image.visible { display: block; }
+
+    .empty-state {
+      padding: 20px;
+      color: #96928a;
+      text-align: center;
+    }
+
+    .empty-art {
+      width: 74px;
+      height: 74px;
+      position: relative;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 15px;
+      color: #c6c1b6;
+      background: rgba(255,255,255,.62);
+      border: 1px solid rgba(210,205,196,.65);
+      border-radius: 14px;
+    }
+
+    .empty-art svg { width: 33px; height: 33px; }
+    .empty-state p { margin: 0; font-size: 12px; }
+    .empty-state .hint { margin-top: 7px; color: #aaa69d; font-size: 10px; }
+
+    .preview-footer {
+      min-height: 60px;
+      padding: 0 19px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-top: 1px solid #f0eee9;
+    }
+
+    .background-picker {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .picker-label { color: #858179; font-size: 10px; font-weight: 580; }
+    .swatches { display: flex; align-items: center; gap: 6px; }
+
+    .swatch {
+      width: 19px;
+      height: 19px;
+      padding: 0;
+      border: 2px solid white;
+      border-radius: 50%;
+      box-shadow: 0 0 0 1px #dedbd4;
+      cursor: pointer;
+    }
+
+    .swatch[aria-pressed="true"] { box-shadow: 0 0 0 1.5px var(--blue); }
+    .swatch.checker {
+      background-color: #f8f7f4;
+      background-image: linear-gradient(45deg,#dedbd4 25%,transparent 25%),linear-gradient(-45deg,#dedbd4 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#dedbd4 75%),linear-gradient(-45deg,transparent 75%,#dedbd4 75%);
+      background-position: 0 0,0 5px,5px -5px,-5px 0;
+      background-size: 10px 10px;
+    }
+
+    .download-button {
+      width: auto;
+      min-height: 36px;
+      padding: 0 13px;
+      font-size: 10px;
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      color: #77756e;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .footer-note span { color: #8a867e; }
+
+    @media (max-width: 760px) {
+      main { padding-top: 43px; }
+      .workspace { grid-template-columns: 1fr; }
+      .controls { order: 2; }
+      .preview-panel { min-height: 420px; }
+      .stage { min-height: 300px; }
+      .stage-image { max-height: 285px; }
+      .intro { margin-bottom: 26px; }
+    }
+
+    @media (max-width: 480px) {
+      .topbar { height: 64px; }
+      .intro p { max-width: 300px; margin-inline: auto; font-size: 13px; }
+      h1 { letter-spacing: -2px; }
+      .preview-toolbar { padding-inline: 12px; }
+      .preview-footer { padding-inline: 12px; }
+      .background-picker { gap: 6px; }
+      .picker-label { display: none; }
+      .swatches { gap: 5px; }
+      .swatch { width: 18px; height: 18px; }
+      .download-button { padding-inline: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="BG Remover home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"/><path d="m4 15 4-4 3 3 3-4 6 6"/><circle cx="15.5" cy="8" r="1.5"/></svg>
+      </span>
+      BG Remover
+    </a>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <h1 id="page-title">Remove the background<br>from your photo</h1>
+      <p>Choose a photo, remove its background, and save it as a PNG. That’s it.</p>
+    </section>
+
+    <section class="workspace" aria-label="Background remover workspace">
+      <aside class="panel controls">
+        <div class="section-heading">
+          <h2>Choose a photo</h2>
+        </div>
+
+        <label class="dropzone" id="dropzone" for="file-input" tabindex="0">
+          <span class="upload-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>
+          </span>
+          <p class="drop-title">Drag a photo here</p>
+          <p class="drop-subtitle">or <span class="browse">choose a file</span></p>
+          <p class="format-note">JPG, PNG, or WebP · up to 20 MB</p>
+        </label>
+        <input id="file-input" type="file" accept="image/jpeg,image/png,image/webp">
+
+        <div class="file-row" id="file-row">
+          <img class="file-thumb" id="file-thumb" alt="">
+          <div class="file-details">
+            <p class="file-name" id="file-name"></p>
+            <p class="file-size" id="file-size"></p>
+          </div>
+          <button class="icon-button" id="clear-button" type="button" aria-label="Remove selected image">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg>
+          </button>
+        </div>
+
+        <div class="divider"></div>
+        <div class="section-heading">
+          <h2>Remove the background</h2>
+        </div>
+        <label class="sr-only" for="image-type">Image type</label>
+        <select class="image-type" id="image-type">
+          <option value="drawing">Drawing or logo — flat backgrounds</option>
+          <option value="photo">Photo — people, pets, and objects</option>
+        </select>
+        <p class="type-hint">For drawings, only background areas connected to the edges are removed. Enclosed white parts stay.</p>
+        <button class="button button-primary" id="remove-button" type="button" disabled>
+          <span id="remove-label">Remove background</span>
+        </button>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+
+        <div class="tip">
+          <span>For the cleanest cut, use a photo where the subject stands out from the background. Your photo stays on your device.</span>
+        </div>
+      </aside>
+
+      <section class="panel preview-panel" aria-label="Image preview">
+        <div class="preview-toolbar">
+          <div class="preview-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg>
+            Preview
+          </div>
+          <div class="view-controls" aria-label="Preview mode">
+            <button class="view-button active" id="result-view" type="button" aria-pressed="true" disabled>Result</button>
+            <button class="view-button" id="original-view" type="button" aria-pressed="false" disabled>Original</button>
+          </div>
+        </div>
+
+        <div class="stage" id="stage" data-background="transparent">
+          <div class="empty-state" id="empty-state">
+            <div class="empty-art" aria-hidden="true">
+              <svg viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="26" height="26" rx="5"/><circle cx="13" cy="14" r="2.5"/><path d="m7 26 7-7 5 5 4-5 6 7"/></svg>
+            </div>
+            <p>Nothing to show yet</p>
+            <p class="hint">Choose a photo to get started</p>
+          </div>
+          <img class="stage-image" id="preview-image" alt="Image preview">
+        </div>
+
+        <div class="preview-footer">
+          <div class="background-picker" aria-label="Preview background color">
+            <span class="picker-label">Preview on</span>
+            <div class="swatches">
+              <button class="swatch checker" type="button" data-background="transparent" aria-label="Transparent checkerboard" aria-pressed="true"></button>
+              <button class="swatch" type="button" data-background="white" style="background:#fff" aria-label="White background" aria-pressed="false"></button>
+              <button class="swatch" type="button" data-background="cream" style="background:#f2e7d5" aria-label="Cream background" aria-pressed="false"></button>
+              <button class="swatch" type="button" data-background="lavender" style="background:#e9e3f7" aria-label="Lavender background" aria-pressed="false"></button>
+              <button class="swatch" type="button" data-background="mint" style="background:#dceee5" aria-label="Mint background" aria-pressed="false"></button>
+              <button class="swatch" type="button" data-background="dark" style="background:#292a2e" aria-label="Dark background" aria-pressed="false"></button>
+            </div>
+          </div>
+          <button class="button button-secondary download-button" id="download-button" type="button" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0 4-4m-4 4-4-4"/><path d="M5 16v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3"/></svg>
+            Download PNG
+          </button>
+        </div>
+      </section>
+    </section>
+    <p class="footer-note">Made by Bonnie.C</p>
+  </main>
+
+  <script type="module">
+    const fileInput = document.querySelector("#file-input");
+    const dropzone = document.querySelector("#dropzone");
+    const fileRow = document.querySelector("#file-row");
+    const fileThumb = document.querySelector("#file-thumb");
+    const fileName = document.querySelector("#file-name");
+    const fileSize = document.querySelector("#file-size");
+    const clearButton = document.querySelector("#clear-button");
+    const removeButton = document.querySelector("#remove-button");
+    const removeLabel = document.querySelector("#remove-label");
+    const imageType = document.querySelector("#image-type");
+    const status = document.querySelector("#status");
+    const stage = document.querySelector("#stage");
+    const previewImage = document.querySelector("#preview-image");
+    const emptyState = document.querySelector("#empty-state");
+    const downloadButton = document.querySelector("#download-button");
+    const resultView = document.querySelector("#result-view");
+    const originalView = document.querySelector("#original-view");
+
+    let sourceFile = null;
+    let sourceUrl = null;
+    let resultUrl = null;
+    let resultBlob = null;
+    let showingOriginal = false;
+    let removeBackgroundModule = null;
+    let busy = false;
+
+    function setStatus(message = "", kind = "") {
+      status.textContent = message;
+      status.className = `status${kind ? ` ${kind}` : ""}`;
+    }
+
+    function formatBytes(bytes) {
+      return bytes < 1024 * 1024
+        ? `${Math.max(1, Math.round(bytes / 1024))} KB`
+        : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    async function removeFlatBackground(file) {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, Math.sqrt(8_000_000 / (bitmap.width * bitmap.height)));
+      const width = Math.max(1, Math.round(bitmap.width * scale));
+      const height = Math.max(1, Math.round(bitmap.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (!context) {
+        bitmap.close();
+        throw new Error("Could not open this image for editing.");
+      }
+
+      context.drawImage(bitmap, 0, 0, width, height);
+      bitmap.close();
+      const image = context.getImageData(0, 0, width, height);
+      const pixels = image.data;
+      const sampleSize = Math.min(8, width, height);
+      const background = [0, 0, 0];
+      let sampleCount = 0;
+
+      for (let corner = 0; corner < 4; corner++) {
+        for (let y = 0; y < sampleSize; y++) {
+          for (let x = 0; x < sampleSize; x++) {
+            const sampleX = corner % 2 === 0 ? x : width - 1 - x;
+            const sampleY = corner < 2 ? y : height - 1 - y;
+            const index = (sampleY * width + sampleX) * 4;
+            background[0] += pixels[index];
+            background[1] += pixels[index + 1];
+            background[2] += pixels[index + 2];
+            sampleCount++;
+          }
+        }
+      }
+      background[0] /= sampleCount;
+      background[1] /= sampleCount;
+      background[2] /= sampleCount;
+
+      const pixelCount = width * height;
+      const visited = new Uint8Array(pixelCount);
+      const queue = new Uint32Array(pixelCount);
+      let readIndex = 0;
+      let writeIndex = 0;
+      const maxBackgroundDistance = 27;
+
+      function addBackgroundPixel(index) {
+        if (visited[index]) return;
+        const pixelOffset = index * 4;
+        const red = pixels[pixelOffset] - background[0];
+        const green = pixels[pixelOffset + 1] - background[1];
+        const blue = pixels[pixelOffset + 2] - background[2];
+        if (red * red + green * green + blue * blue > maxBackgroundDistance ** 2) return;
+        visited[index] = 1;
+        queue[writeIndex++] = index;
+      }
+
+      for (let x = 0; x < width; x++) {
+        addBackgroundPixel(x);
+        addBackgroundPixel((height - 1) * width + x);
+      }
+      for (let y = 1; y < height - 1; y++) {
+        addBackgroundPixel(y * width);
+        addBackgroundPixel(y * width + width - 1);
+      }
+
+      while (readIndex < writeIndex) {
+        const index = queue[readIndex++];
+        const x = index % width;
+        const pixelOffset = index * 4;
+        pixels[pixelOffset + 3] = 0;
+
+        if (x > 0) addBackgroundPixel(index - 1);
+        if (x < width - 1) addBackgroundPixel(index + 1);
+        if (index >= width) addBackgroundPixel(index - width);
+        if (index < pixelCount - width) addBackgroundPixel(index + width);
+      }
+
+      context.putImageData(image, 0, 0);
+      return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("Could not save the edited image."));
+        }, "image/png");
+      });
+    }
+
+    function showPreview(url) {
+      previewImage.src = url;
+      previewImage.classList.add("visible");
+      emptyState.hidden = true;
+      emptyState.style.display = "none";
+    }
+
+    function setView(original) {
+      showingOriginal = original;
+      const url = original || !resultUrl ? sourceUrl : resultUrl;
+      if (url) showPreview(url);
+      resultView.classList.toggle("active", !original);
+      originalView.classList.toggle("active", original);
+      resultView.setAttribute("aria-pressed", String(!original));
+      originalView.setAttribute("aria-pressed", String(original));
+    }
+
+    function clearImage() {
+      if (busy) return;
+      if (sourceUrl) URL.revokeObjectURL(sourceUrl);
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      sourceFile = null;
+      sourceUrl = null;
+      resultUrl = null;
+      resultBlob = null;
+      fileInput.value = "";
+      fileRow.classList.remove("visible");
+      previewImage.removeAttribute("src");
+      previewImage.classList.remove("visible");
+      emptyState.hidden = false;
+      emptyState.style.display = "";
+      removeButton.disabled = true;
+      downloadButton.disabled = true;
+      resultView.disabled = true;
+      originalView.disabled = true;
+      setStatus();
+    }
+
+    function loadImage(file) {
+      if (!file || busy) return;
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        setStatus("Choose a JPG, PNG or WebP image.", "error");
+        return;
+      }
+      if (file.size > 20 * 1024 * 1024) {
+        setStatus("This image is over 20 MB. Choose a smaller file.", "error");
+        return;
+      }
+      clearImage();
+      sourceFile = file;
+      sourceUrl = URL.createObjectURL(file);
+      fileThumb.src = sourceUrl;
+      fileName.textContent = file.name;
+      fileSize.textContent = formatBytes(file.size);
+      fileRow.classList.add("visible");
+      showPreview(sourceUrl);
+      removeButton.disabled = false;
+      setStatus("Ready when you are.");
+    }
+
+    function setBusy(value) {
+      busy = value;
+      removeButton.disabled = value || !sourceFile;
+      fileInput.disabled = value;
+      clearButton.disabled = value;
+      removeLabel.textContent = value ? "Removing background…" : "Remove background";
+      if (value) {
+        const spinner = document.createElement("span");
+        spinner.className = "spinner";
+        spinner.id = "spinner";
+        removeButton.prepend(spinner);
+      } else {
+        document.querySelector("#spinner")?.remove();
+      }
+    }
+
+    fileInput.addEventListener("change", () => loadImage(fileInput.files?.[0]));
+    clearButton.addEventListener("click", clearImage);
+    dropzone.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        fileInput.click();
+      }
+    });
+
+    for (const eventName of ["dragenter", "dragover"]) {
+      dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropzone.classList.add("drag-over");
+      });
+    }
+    for (const eventName of ["dragleave", "drop"]) {
+      dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropzone.classList.remove("drag-over");
+      });
+    }
+    dropzone.addEventListener("drop", (event) => {
+      const file = event.dataTransfer?.files?.[0];
+      if (file) loadImage(file);
+    });
+
+    document.querySelectorAll(".swatch").forEach((swatch) => {
+      swatch.addEventListener("click", () => {
+        const background = swatch.dataset.background;
+        stage.dataset.background = background;
+        document.querySelectorAll(".swatch").forEach((item) => {
+          item.setAttribute("aria-pressed", String(item === swatch));
+        });
+      });
+    });
+
+    resultView.addEventListener("click", () => setView(false));
+    originalView.addEventListener("click", () => setView(true));
+
+    removeButton.addEventListener("click", async () => {
+      if (!sourceFile || busy) return;
+      setBusy(true);
+      try {
+        let blob;
+        if (imageType.value === "drawing") {
+          setStatus("Keeping enclosed details and clearing the background…");
+          blob = await removeFlatBackground(sourceFile);
+        } else {
+          setStatus("Loading the photo remover… The first download can take a minute.");
+          if (!removeBackgroundModule) {
+            const library = await import("https://esm.sh/@imgly/background-removal@1.7.0");
+            removeBackgroundModule = library.removeBackground;
+          }
+          blob = await removeBackgroundModule(sourceFile, {
+            model: "isnet",
+            output: { format: "image/png", quality: 0.9 },
+            progress: (key, current, total) => {
+              if (total > 0) {
+                const percent = Math.round((current / total) * 100);
+                setStatus(`Preparing ${key.replaceAll("_", " ")}… ${percent}%`);
+              }
+            }
+          });
+        }
+        if (!(blob instanceof Blob) || blob.size === 0) {
+          throw new Error("The remover returned an empty image. Please try another photo.");
+        }
+        if (resultUrl) URL.revokeObjectURL(resultUrl);
+        resultBlob = blob;
+        resultUrl = URL.createObjectURL(blob);
+        resultView.disabled = false;
+        originalView.disabled = false;
+        downloadButton.disabled = false;
+        setView(false);
+        setStatus(imageType.value === "drawing"
+          ? "Done — the edge background is gone, and the enclosed parts are kept."
+          : "Done — your transparent PNG is ready.", "success");
+      } catch (error) {
+        console.error("Background removal failed:", error);
+        setStatus(error instanceof Error
+          ? `Could not remove the background: ${error.message}`
+          : "Could not remove the background. Check your connection and try again.", "error");
+      } finally {
+        setBusy(false);
+      }
+    });
+
+    downloadButton.addEventListener("click", () => {
+      if (!resultBlob || !resultUrl) return;
+      const link = document.createElement("a");
+      const baseName = sourceFile?.name.replace(/\.[^.]+$/, "") || "cutout";
+      link.href = resultUrl;
+      link.download = `${baseName}-cutout.png`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+    });
+  </script>
+</body>
+</html>
