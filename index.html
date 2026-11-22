@@ -564,6 +564,12 @@
     .user-list th, .user-list td { padding: 9px 6px; border-bottom: 1px solid var(--line); text-align: left; }
     .user-list th { color: var(--muted); font-weight: 600; }
     .user-list td:last-child, .user-list th:last-child { text-align: right; }
+    .user-actions { display: flex; justify-content: flex-end; gap: 7px; }
+    .history-panel { margin-top: 16px; padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: #fbfaf7; }
+    .history-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .history-heading h3 { margin: 0; font-size: 13px; }
+    .history-list { margin: 12px 0 0; padding-left: 20px; color: var(--muted); font-size: 12px; }
+    .history-list li + li { margin-top: 7px; }
     .revoke-button {
       padding: 5px 8px;
       border: 1px solid var(--line);
@@ -768,9 +774,16 @@
     </div>
     <p class="admin-message" id="admin-message" role="status" aria-live="polite"></p>
     <table class="user-list">
-      <thead><tr><th>Username</th><th>Role</th><th>Access</th></tr></thead>
+      <thead><tr><th>Username</th><th>Role</th><th>Last used</th><th>More</th></tr></thead>
       <tbody id="user-list-body"></tbody>
     </table>
+    <section class="history-panel" id="history-panel" hidden aria-live="polite">
+      <div class="history-heading">
+        <h3 id="history-title">Usage history</h3>
+        <button class="account-button" id="close-history-button" type="button">Close</button>
+      </div>
+      <ol class="history-list" id="history-list"></ol>
+    </section>
   </section>
 
   <script src="./supabase-config.js"></script>
@@ -816,6 +829,9 @@
     const userListBody = document.querySelector("#user-list-body");
     const inviteOutput = document.querySelector("#invite-output");
     const inviteOutputCode = document.querySelector("#invite-output-code");
+    const historyPanel = document.querySelector("#history-panel");
+    const historyTitle = document.querySelector("#history-title");
+    const historyList = document.querySelector("#history-list");
 
     function normalizeUsername(value) {
       return value.trim().toLowerCase();
@@ -849,7 +865,12 @@
       }
     }
 
-    async function refreshAccess() {
+    async function recordUsage(activity) {
+      const { error } = await supabase.rpc("record_site_usage", { p_activity: activity });
+      if (error) throw error;
+    }
+
+    async function refreshAccess(recordVisit = false) {
       if (!supabase) return null;
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
@@ -874,6 +895,15 @@
       showAccessScreen(profile);
       setAccessMessage();
       if (profile.role === "controller") await refreshUserList();
+      if (recordVisit) {
+        try {
+          await recordUsage("opened");
+          if (profile.role === "controller") await refreshUserList();
+        } catch (error) {
+          setStatus("Could not save this visit to account history.", "error");
+          console.error("Recording account visit failed:", error);
+        }
+      }
       return profile;
     }
 
@@ -920,10 +950,19 @@
         const { error } = await supabase.auth.signInWithPassword({ email: usernameEmail(username), password });
         if (error) throw error;
         authRequestInProgress = false;
-        const profile = await refreshAccess();
+        const profile = await refreshAccess(true);
         if (profile) document.querySelector("#login-password").value = "";
       } catch (error) {
-        setAccessMessage("Couldn’t sign in. Check your username and password, or ask Bonnie to confirm your access.", "error");
+        const code = error?.code;
+        if (code === "invalid_credentials") {
+          setAccessMessage("That username or password doesn’t match. For BC929, check that the Supabase user is bc929@login.bgremover.invalid and use the password you set for it.", "error");
+        } else if (code === "email_not_confirmed") {
+          setAccessMessage("This Supabase account isn’t confirmed yet. Confirm it in Supabase Authentication → Users, then try again.", "error");
+        } else if (code === "signup_disabled") {
+          setAccessMessage("Supabase sign-ups are turned off. Turn on Allow new users to sign up in Authentication settings.", "error");
+        } else {
+          setAccessMessage(`Couldn’t sign in: ${error instanceof Error ? error.message : "check the Supabase setup and try again."}`, "error");
+        }
         console.error("Sign-in failed:", error);
       } finally {
         authRequestInProgress = false;
@@ -982,7 +1021,7 @@
         document.querySelector("#invite-password").value = "";
         document.querySelector("#invite-code").value = "";
         authRequestInProgress = false;
-        await refreshAccess();
+        await refreshAccess(true);
       } catch (error) {
         setAccessMessage(error instanceof Error ? error.message : "Could not create the account. Check the invite and try again.", "error");
         console.error("Invite account setup failed:", error);
@@ -1013,23 +1052,81 @@
         const row = document.createElement("tr");
         const usernameCell = document.createElement("td");
         const roleCell = document.createElement("td");
+        const lastUsedCell = document.createElement("td");
         const actionCell = document.createElement("td");
         usernameCell.textContent = user.username;
         roleCell.textContent = user.role === "controller" ? "Controller" : "Member";
+        lastUsedCell.textContent = user.last_used_at ? formatDateTime(user.last_used_at) : "Never";
+        const actions = document.createElement("div");
+        actions.className = "user-actions";
+        const moreButton = document.createElement("button");
+        moreButton.className = "account-button";
+        moreButton.type = "button";
+        moreButton.textContent = "More";
+        moreButton.setAttribute("aria-controls", "history-panel");
+        moreButton.addEventListener("click", () => showUsageHistory(user.username));
+        actions.append(moreButton);
         if (user.role === "member") {
           const revokeButton = document.createElement("button");
           revokeButton.className = "revoke-button";
           revokeButton.type = "button";
           revokeButton.textContent = "Remove";
           revokeButton.addEventListener("click", () => revokeUser(user.username));
-          actionCell.append(revokeButton);
-        } else {
-          actionCell.textContent = "Owner";
+          actions.append(revokeButton);
         }
-        row.append(usernameCell, roleCell, actionCell);
+        actionCell.append(actions);
+        row.append(usernameCell, roleCell, lastUsedCell, actionCell);
         userListBody.append(row);
       }
     }
+
+    function formatDateTime(value) {
+      return new Intl.DateTimeFormat(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short"
+      }).format(new Date(value));
+    }
+
+    async function showUsageHistory(username) {
+      historyPanel.hidden = false;
+      historyTitle.textContent = `${username} — usage history`;
+      historyList.replaceChildren();
+      const loading = document.createElement("li");
+      loading.textContent = "Loading…";
+      historyList.append(loading);
+      try {
+        const { data, error } = await supabase.rpc("list_site_usage", {
+          p_username: username,
+          p_limit: 50
+        });
+        if (error) throw error;
+        historyList.replaceChildren();
+        if (!data?.length) {
+          const empty = document.createElement("li");
+          empty.textContent = "No recorded use yet.";
+          historyList.append(empty);
+          return;
+        }
+        for (const entry of data) {
+          const item = document.createElement("li");
+          const action = entry.activity === "background_removed" ? "Removed a background" : "Opened the site";
+          item.textContent = `${formatDateTime(entry.used_at)} — ${action}`;
+          historyList.append(item);
+        }
+      } catch (error) {
+        historyList.replaceChildren();
+        const item = document.createElement("li");
+        item.textContent = "Could not load this account’s history. Try again.";
+        historyList.append(item);
+        setAdminMessage("Could not load usage history.", "error");
+        console.error("Loading account usage history failed:", error);
+      }
+    }
+
+    document.querySelector("#close-history-button").addEventListener("click", () => {
+      historyPanel.hidden = true;
+      historyList.replaceChildren();
+    });
 
     async function revokeUser(username) {
       if (!window.confirm(`Remove ${username}’s access?`)) return;
@@ -1103,7 +1200,7 @@
             console.error("Checking site access failed:", error);
           }), 0);
         });
-        await refreshAccess();
+        await refreshAccess(true);
         window.setInterval(() => {
           if (!authRequestInProgress && !tool.hidden) {
             refreshAccess().catch((error) => {
@@ -1371,9 +1468,16 @@
         originalView.disabled = false;
         downloadButton.disabled = false;
         setView(false);
-        setStatus(imageType.value === "drawing"
-          ? "Done — the edge background is gone, and the enclosed parts are kept."
-          : "Done — your transparent PNG is ready.", "success");
+        try {
+          await recordUsage("background_removed");
+          setStatus(imageType.value === "drawing"
+            ? "Done — the edge background is gone, and the enclosed parts are kept."
+            : "Done — your transparent PNG is ready.", "success");
+          if (!adminPanel.hidden) await refreshUserList();
+        } catch (error) {
+          setStatus("The cutout is ready, but its use time couldn’t be saved to account history.", "error");
+          console.error("Recording background-removal activity failed:", error);
+        }
       } catch (error) {
         console.error("Background removal failed:", error);
         setStatus(error instanceof Error
