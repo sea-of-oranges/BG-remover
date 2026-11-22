@@ -220,7 +220,6 @@
     .icon-button svg { width: 15px; height: 15px; }
 
     .divider { height: 1px; margin: 21px 0; background: #f0eee9; }
-
     .image-type {
       display: block;
       width: 100%;
@@ -469,6 +468,112 @@
 
     .footer-note span { color: #8a867e; }
 
+    [hidden] { display: none !important; }
+
+    .account-bar { display: flex; align-items: center; gap: 12px; }
+    .account-name { color: var(--muted); font-size: 12px; }
+    .account-button {
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: white;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .account-button:hover { border-color: var(--blue); }
+
+    .access-screen {
+      width: min(440px, calc(100% - 36px));
+      margin: clamp(42px, 9vh, 90px) auto 60px;
+    }
+
+    .access-heading { margin-bottom: 22px; }
+    .access-heading h1 { font-size: clamp(28px, 5vw, 36px); letter-spacing: -1.2px; }
+    .access-heading p { margin: 10px 0 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+
+    .access-card {
+      padding: 24px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    .access-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+    .access-tab {
+      flex: 1;
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: white;
+      color: var(--muted);
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .access-tab.active { border-color: var(--blue); color: var(--ink); background: #f3f8fc; }
+
+    .access-form { display: grid; gap: 12px; }
+    .access-form label { display: grid; gap: 6px; font-size: 12px; font-weight: 600; }
+    .access-form input {
+      width: 100%;
+      min-height: 40px;
+      padding: 9px 11px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      font-size: 13px;
+    }
+    .access-form input:focus { outline: 2px solid #d5e7f7; border-color: var(--blue); }
+    .access-form .button { margin-top: 3px; }
+
+    .access-message, .admin-message {
+      min-height: 18px;
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .access-message.error, .admin-message.error { color: #bd4435; }
+    .access-message.success, .admin-message.success { color: var(--green); }
+
+    .setup-note {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #f7f6f2;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.55;
+    }
+    .setup-note a { color: var(--blue-dark); }
+
+    .admin-panel { width: min(1050px, calc(100% - 44px)); margin: 0 auto 32px; padding: 20px; }
+    .admin-panel h2 { margin: 0 0 6px; font-size: 16px; }
+    .admin-panel > p { margin: 0 0 16px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .admin-panel .access-form { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+    .admin-panel .access-form .button { min-width: 130px; }
+    .invite-output {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfaf7;
+      font-size: 12px;
+    }
+    .invite-output code { display: block; overflow-wrap: anywhere; margin: 8px 0; color: var(--ink); }
+    .user-list { width: 100%; margin-top: 16px; border-collapse: collapse; font-size: 12px; }
+    .user-list th, .user-list td { padding: 9px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+    .user-list th { color: var(--muted); font-weight: 600; }
+    .user-list td:last-child, .user-list th:last-child { text-align: right; }
+    .revoke-button {
+      padding: 5px 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: white;
+      color: #9c4035;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
     @media (max-width: 760px) {
       main { padding-top: 43px; }
       .workspace { grid-template-columns: 1fr; }
@@ -490,6 +595,10 @@
       .swatches { gap: 5px; }
       .swatch { width: 18px; height: 18px; }
       .download-button { padding-inline: 10px; }
+      .account-name { display: none; }
+      .admin-panel .access-form { grid-template-columns: 1fr; }
+      .admin-panel .access-form .button { width: 100%; }
+      .access-card, .admin-panel { padding: 18px; }
     }
   </style>
 </head>
@@ -501,9 +610,52 @@
       </span>
       BG Remover
     </a>
+    <div class="account-bar" id="account-bar" hidden>
+      <span class="account-name" id="account-name"></span>
+      <button class="account-button" id="sign-out-button" type="button">Sign out</button>
+    </div>
   </header>
 
-  <main>
+  <main class="access-screen" id="access-screen">
+    <section class="access-heading">
+      <h1>Sign in to use BG Remover</h1>
+      <p>This site is private. Ask Bonnie for an invite code if you’ve been given access.</p>
+    </section>
+    <section class="access-card">
+      <div class="access-tabs" role="tablist" aria-label="Account options">
+        <button class="access-tab active" id="login-tab" type="button" role="tab" aria-selected="true">Sign in</button>
+        <button class="access-tab" id="invite-tab" type="button" role="tab" aria-selected="false">I have an invite</button>
+      </div>
+      <form class="access-form" id="login-form">
+        <label>Username
+          <input id="login-username" name="username" autocomplete="username" maxlength="24" required>
+        </label>
+        <label>Password
+          <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="button button-primary" type="submit">Sign in</button>
+      </form>
+      <form class="access-form" id="invite-form" hidden>
+        <label>Username from your invite
+          <input id="invite-username" name="username" autocomplete="username" maxlength="24" required>
+        </label>
+        <label>One-time invite code
+          <input id="invite-code" name="invite-code" autocomplete="one-time-code" required>
+        </label>
+        <label>Choose a password
+          <input id="invite-password" name="new-password" type="password" autocomplete="new-password" minlength="8" required>
+        </label>
+        <button class="button button-primary" type="submit">Create account</button>
+      </form>
+      <p class="access-message" id="access-message" role="status" aria-live="polite"></p>
+      <div class="setup-note" id="setup-note" hidden>
+        Account access needs to be connected before this site can be used.
+        <a href="./ACCESS-SETUP.html">See the setup steps</a>.
+      </div>
+    </section>
+  </main>
+
+  <main id="tool" hidden>
     <section class="intro" aria-labelledby="page-title">
       <h1 id="page-title">Remove the background<br>from your photo</h1>
       <p>Choose a photo, remove its background, and save it as a PNG. That’s it.</p>
@@ -555,7 +707,6 @@
           <span>For the cleanest cut, use a photo where the subject stands out from the background. Your photo stays on your device.</span>
         </div>
       </aside>
-
       <section class="panel preview-panel" aria-label="Image preview">
         <div class="preview-toolbar">
           <div class="preview-title">
@@ -601,6 +752,28 @@
     <p class="footer-note">Made by Bonnie.C</p>
   </main>
 
+  <section class="panel admin-panel" id="admin-panel" hidden aria-labelledby="admin-title">
+    <h2 id="admin-title">Controller settings</h2>
+    <p>Add a username and share its one-time invite code with that person. They’ll choose their own password.</p>
+    <form class="access-form" id="add-user-form">
+      <label>New username
+        <input id="new-username" name="username" maxlength="24" pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,23}" required>
+      </label>
+      <button class="button button-primary" type="submit">Create invite</button>
+    </form>
+    <div class="invite-output" id="invite-output" hidden>
+      <span id="invite-output-label"></span>
+      <code id="invite-output-code"></code>
+      <button class="account-button" id="copy-invite-button" type="button">Copy invite code</button>
+    </div>
+    <p class="admin-message" id="admin-message" role="status" aria-live="polite"></p>
+    <table class="user-list">
+      <thead><tr><th>Username</th><th>Role</th><th>Access</th></tr></thead>
+      <tbody id="user-list-body"></tbody>
+    </table>
+  </section>
+
+  <script src="./supabase-config.js"></script>
   <script type="module">
     const fileInput = document.querySelector("#file-input");
     const dropzone = document.querySelector("#dropzone");
@@ -627,6 +800,327 @@
     let showingOriginal = false;
     let removeBackgroundModule = null;
     let busy = false;
+    let supabase = null;
+    let authRequestInProgress = false;
+
+    const accessScreen = document.querySelector("#access-screen");
+    const accessMessage = document.querySelector("#access-message");
+    const setupNote = document.querySelector("#setup-note");
+    const tool = document.querySelector("#tool");
+    const adminPanel = document.querySelector("#admin-panel");
+    const accountBar = document.querySelector("#account-bar");
+    const accountName = document.querySelector("#account-name");
+    const loginForm = document.querySelector("#login-form");
+    const inviteForm = document.querySelector("#invite-form");
+    const adminMessage = document.querySelector("#admin-message");
+    const userListBody = document.querySelector("#user-list-body");
+    const inviteOutput = document.querySelector("#invite-output");
+    const inviteOutputCode = document.querySelector("#invite-output-code");
+
+    function normalizeUsername(value) {
+      return value.trim().toLowerCase();
+    }
+
+    function usernameEmail(username) {
+      return `${username}@login.bgremover.invalid`;
+    }
+
+    function setAccessMessage(message = "", kind = "") {
+      accessMessage.textContent = message;
+      accessMessage.className = `access-message${kind ? ` ${kind}` : ""}`;
+    }
+
+    function setAdminMessage(message = "", kind = "") {
+      adminMessage.textContent = message;
+      adminMessage.className = `admin-message${kind ? ` ${kind}` : ""}`;
+    }
+
+    function showAccessScreen(profile = null) {
+      const signedIn = Boolean(profile);
+      accessScreen.hidden = signedIn;
+      tool.hidden = !signedIn;
+      accountBar.hidden = !signedIn;
+      adminPanel.hidden = !signedIn || profile.role !== "controller";
+      if (signedIn) {
+        accountName.textContent = `${profile.username}${profile.role === "controller" ? " · Controller" : ""}`;
+      } else {
+        accountName.textContent = "";
+        clearImage();
+      }
+    }
+
+    async function refreshAccess() {
+      if (!supabase) return null;
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!sessionData.session) {
+        showAccessScreen();
+        return null;
+      }
+
+      const { data: profile, error } = await supabase.rpc("get_my_site_access");
+      if (error) {
+        showAccessScreen();
+        setAccessMessage("Could not verify access with Supabase. Check your connection and try again.", "error");
+        throw error;
+      }
+      if (!profile?.username || !["member", "controller"].includes(profile.role)) {
+        await supabase.auth.signOut();
+        showAccessScreen();
+        setAccessMessage("This account doesn’t have access. Ask Bonnie for an invite.", "error");
+        return null;
+      }
+
+      showAccessScreen(profile);
+      setAccessMessage();
+      if (profile.role === "controller") await refreshUserList();
+      return profile;
+    }
+
+    function setFormBusy(form, busyState) {
+      form.querySelectorAll("button").forEach((button) => {
+        button.disabled = busyState;
+      });
+    }
+
+    document.querySelector("#login-tab").addEventListener("click", () => {
+      document.querySelector("#login-tab").classList.add("active");
+      document.querySelector("#invite-tab").classList.remove("active");
+      document.querySelector("#login-tab").setAttribute("aria-selected", "true");
+      document.querySelector("#invite-tab").setAttribute("aria-selected", "false");
+      loginForm.hidden = false;
+      inviteForm.hidden = true;
+      setAccessMessage();
+    });
+
+    document.querySelector("#invite-tab").addEventListener("click", () => {
+      document.querySelector("#invite-tab").classList.add("active");
+      document.querySelector("#login-tab").classList.remove("active");
+      document.querySelector("#invite-tab").setAttribute("aria-selected", "true");
+      document.querySelector("#login-tab").setAttribute("aria-selected", "false");
+      inviteForm.hidden = false;
+      loginForm.hidden = true;
+      setAccessMessage();
+    });
+
+    loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!supabase || authRequestInProgress) return;
+      const username = normalizeUsername(document.querySelector("#login-username").value);
+      const password = document.querySelector("#login-password").value;
+      if (!/^[a-z0-9][a-z0-9._-]{2,23}$/.test(username)) {
+        setAccessMessage("Enter a username with 3–24 letters, numbers, dots, dashes, or underscores.", "error");
+        return;
+      }
+
+      authRequestInProgress = true;
+      setFormBusy(loginForm, true);
+      setAccessMessage("Signing in…");
+      try {
+        const { error } = await supabase.auth.signInWithPassword({ email: usernameEmail(username), password });
+        if (error) throw error;
+        authRequestInProgress = false;
+        const profile = await refreshAccess();
+        if (profile) document.querySelector("#login-password").value = "";
+      } catch (error) {
+        setAccessMessage("Couldn’t sign in. Check your username and password, or ask Bonnie to confirm your access.", "error");
+        console.error("Sign-in failed:", error);
+      } finally {
+        authRequestInProgress = false;
+        setFormBusy(loginForm, false);
+      }
+    });
+
+    inviteForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!supabase || authRequestInProgress) return;
+      const username = normalizeUsername(document.querySelector("#invite-username").value);
+      const code = document.querySelector("#invite-code").value.trim();
+      const password = document.querySelector("#invite-password").value;
+      if (!/^[a-z0-9][a-z0-9._-]{2,23}$/.test(username)) {
+        setAccessMessage("Enter the username Bonnie gave you (3–24 letters, numbers, dots, dashes, or underscores).", "error");
+        return;
+      }
+      if (password.length < 8) {
+        setAccessMessage("Choose a password with at least 8 characters.", "error");
+        return;
+      }
+
+      authRequestInProgress = true;
+      setFormBusy(inviteForm, true);
+      setAccessMessage("Checking your invite…");
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email: usernameEmail(username),
+          password,
+          options: { data: { username } }
+        });
+        let session = data?.session;
+        if (error) {
+          const alreadyRegistered = /already registered|already exists|user_already_exists/i.test(error.message);
+          if (!alreadyRegistered) throw error;
+          const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+            email: usernameEmail(username),
+            password
+          });
+          if (loginError) throw new Error("This username already has an account. Sign in with its current password to use the new invite.");
+          session = loginData.session;
+        }
+        if (!session) {
+          throw new Error("Email confirmation must be turned off in Supabase Auth for username accounts to work.");
+        }
+
+        const { error: inviteError } = await supabase.rpc("redeem_site_invite", {
+          p_username: username,
+          p_invite_code: code
+        });
+        if (inviteError) {
+          await supabase.auth.signOut();
+          throw new Error("That invite code is wrong, expired, or has already been used.");
+        }
+
+        document.querySelector("#invite-password").value = "";
+        document.querySelector("#invite-code").value = "";
+        authRequestInProgress = false;
+        await refreshAccess();
+      } catch (error) {
+        setAccessMessage(error instanceof Error ? error.message : "Could not create the account. Check the invite and try again.", "error");
+        console.error("Invite account setup failed:", error);
+      } finally {
+        authRequestInProgress = false;
+        setFormBusy(inviteForm, false);
+      }
+    });
+
+    document.querySelector("#sign-out-button").addEventListener("click", async () => {
+      if (!supabase) return;
+      try {
+        await supabase.auth.signOut();
+        clearImage();
+        showAccessScreen();
+        setAccessMessage("You’ve signed out.");
+      } catch (error) {
+        setAccessMessage("Could not sign out. Please try again.", "error");
+        console.error("Sign-out failed:", error);
+      }
+    });
+
+    async function refreshUserList() {
+      const { data, error } = await supabase.rpc("list_site_access");
+      if (error) throw error;
+      userListBody.replaceChildren();
+      for (const user of data ?? []) {
+        const row = document.createElement("tr");
+        const usernameCell = document.createElement("td");
+        const roleCell = document.createElement("td");
+        const actionCell = document.createElement("td");
+        usernameCell.textContent = user.username;
+        roleCell.textContent = user.role === "controller" ? "Controller" : "Member";
+        if (user.role === "member") {
+          const revokeButton = document.createElement("button");
+          revokeButton.className = "revoke-button";
+          revokeButton.type = "button";
+          revokeButton.textContent = "Remove";
+          revokeButton.addEventListener("click", () => revokeUser(user.username));
+          actionCell.append(revokeButton);
+        } else {
+          actionCell.textContent = "Owner";
+        }
+        row.append(usernameCell, roleCell, actionCell);
+        userListBody.append(row);
+      }
+    }
+
+    async function revokeUser(username) {
+      if (!window.confirm(`Remove ${username}’s access?`)) return;
+      try {
+        const { error } = await supabase.rpc("revoke_site_access", { p_username: username });
+        if (error) throw error;
+        setAdminMessage(`${username} can no longer sign in.`, "success");
+        await refreshUserList();
+      } catch (error) {
+        setAdminMessage("Could not remove access. Try again.", "error");
+        console.error("Removing site access failed:", error);
+      }
+    }
+
+    document.querySelector("#add-user-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!supabase) return;
+      const username = normalizeUsername(document.querySelector("#new-username").value);
+      if (!/^[a-z0-9][a-z0-9._-]{2,23}$/.test(username)) {
+        setAdminMessage("Use 3–24 letters, numbers, dots, dashes, or underscores.", "error");
+        return;
+      }
+      const button = event.currentTarget.querySelector("button");
+      button.disabled = true;
+      inviteOutput.hidden = true;
+      setAdminMessage("Creating invite…");
+      try {
+        const { data, error } = await supabase.rpc("create_site_invite", { p_username: username });
+        if (error) throw error;
+        document.querySelector("#invite-output-label").textContent = `One-time code for ${data.username} (expires in 7 days):`;
+        inviteOutputCode.textContent = data.invite_code;
+        inviteOutput.hidden = false;
+        document.querySelector("#new-username").value = "";
+        setAdminMessage("Invite created. Copy the code and send it directly to that person.", "success");
+        await refreshUserList();
+      } catch (error) {
+        setAdminMessage(error instanceof Error ? error.message : "Could not create invite.", "error");
+        console.error("Creating site invite failed:", error);
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.querySelector("#copy-invite-button").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(inviteOutputCode.textContent);
+        setAdminMessage("Invite code copied.");
+      } catch (error) {
+        setAdminMessage("Could not copy automatically. Select and copy the code above.", "error");
+        console.error("Copying invite failed:", error);
+      }
+    });
+
+    async function initializeAccess() {
+      const config = window.BG_REMOVER_SUPABASE;
+      if (!config?.url || !config?.anonKey) {
+        setupNote.hidden = false;
+        document.querySelectorAll("#login-form input, #login-form button, #invite-form input, #invite-form button")
+          .forEach((control) => { control.disabled = true; });
+        return;
+      }
+      try {
+        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.1");
+        supabase = createClient(config.url, config.anonKey, {
+          auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+        });
+        supabase.auth.onAuthStateChange(() => {
+          if (!authRequestInProgress) window.setTimeout(() => refreshAccess().catch((error) => {
+            showAccessScreen();
+            setAccessMessage("Could not verify access with Supabase. Check your connection and try again.", "error");
+            console.error("Checking site access failed:", error);
+          }), 0);
+        });
+        await refreshAccess();
+        window.setInterval(() => {
+          if (!authRequestInProgress && !tool.hidden) {
+            refreshAccess().catch((error) => {
+              showAccessScreen();
+              setAccessMessage("Could not verify access with Supabase. Sign in again when your connection is back.", "error");
+              console.error("Refreshing site access failed:", error);
+            });
+          }
+        }, 60_000);
+      } catch (error) {
+        showAccessScreen();
+        setAccessMessage("Could not connect to account services. Check the Supabase setup and try again.", "error");
+        console.error("Starting account access failed:", error);
+      }
+    }
+
+    initializeAccess();
 
     function setStatus(message = "", kind = "") {
       status.textContent = message;
@@ -791,6 +1285,7 @@
       removeButton.disabled = value || !sourceFile;
       fileInput.disabled = value;
       clearButton.disabled = value;
+      document.querySelector("#sign-out-button").disabled = value;
       removeLabel.textContent = value ? "Removing background…" : "Remove background";
       if (value) {
         const spinner = document.createElement("span");
